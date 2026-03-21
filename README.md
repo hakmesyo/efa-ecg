@@ -1,7 +1,7 @@
 # EFA-ECG: Explanation-Attribution Faithfulness Auditor for ECG-Focused Multimodal LLMs
 
 <p align="center">
-  <img src="data/images/teaser.png" width="800" alt="Right Diagnosis, Blind Model"/>
+  <img src="https://github.com/hakmesyo/efa-ecg/releases/download/ecg_images/teaser.png" width="800" alt="Right Diagnosis, Blind Model"/>
 </p>
 
 <p align="center">
