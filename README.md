@@ -40,47 +40,6 @@ Multimodal large language models (MLLMs) generate natural language explanations 
 
 ---
 
-## 📁 Repository Structure
-
-```
-efa-ecg/
-├── README.md
-├── requirements.txt
-│
-├── step1a_sampling.py          # Stratified sampling from PTB-XL (1,000 ECGs)
-├── step1b_groundtruth.py       # SCP code → lead-level ground truth
-├── step1c_rendering.py         # ECG rendering (300 DPI, 4×3 layout)
-├── step2a_gemini_inference.py  # Gemini 2.5 Flash inference (parallel)
-├── step3a_occlusion.py         # Lead-structured occlusion attribution
-├── step4_efa.py                # EFA score computation
-├── step5_analysis.py           # Correlation & Danger Zone analysis
-│
-├── data/
-│   ├── sample_1000.csv         # 1,000 stratified ECG IDs
-│   ├── ground_truth.csv        # Lead-level ground truth
-│   ├── ground_truth.json
-│   ├── panel_coords.json       # Lead panel pixel coordinates
-│   ├── images/                 # Rendered ECG PNGs (300 DPI)
-│   └── ptb-xl/                 # PTB-XL raw data (download separately)
-│
-├── kaggle_upload/              # Files uploaded to Kaggle for GPU inference
-│   ├── ecg_images.zip
-│   ├── ground_truth.csv
-│   ├── ground_truth.json
-│   └── sample_1000.csv
-│
-└── results/
-    ├── gemini_outputs.csv          # Gemini 2.5 Flash responses (1,000)
-    ├── llava_mistral_outputs.csv   # LLaVA-v1.6-Mistral responses (1,000)
-    ├── llava_mistral_occlusion.csv # Occlusion attribution scores
-    ├── efa_scores.csv              # Final EFA scores (all models)
-    ├── correlation_results.csv     # Confidence–faithfulness correlation
-    ├── danger_zone_results.csv     # Danger Zone prevalence
-    └── occ_maps/                   # Per-ECG occlusion numpy arrays
-```
-
----
-
 ## ⚙️ Installation
 
 ```bash
