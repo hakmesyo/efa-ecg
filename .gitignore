@@ -1,0 +1,11 @@
+# Large data files
+data/
+kaggle_upload/
+results/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.zip

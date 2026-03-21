@@ -1,15 +1,15 @@
 # EFA-ECG: Explanation-Attribution Faithfulness Auditor for ECG-Focused Multimodal LLMs
 
 <p align="center">
-  <img src="assets/teaser.png" width="800" alt="Right Diagnosis, Blind Model"/>
+  <img src="data/images/teaser.png" width="800" alt="Right Diagnosis, Blind Model"/>
 </p>
 
 <p align="center">
   <a href="https://doi.org/10.1109/JBHI.XXXX.XXXXXXX"><img src="https://img.shields.io/badge/IEEE%20JBHI-Under%20Review-orange"/></a>
   <a href="https://www.physionet.org/content/ptb-xl/1.0.3/"><img src="https://img.shields.io/badge/Dataset-PTB--XL-blue"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green"/></a>
-  <img src="https://img.shields.io/badge/Python-3.9%2B-blue"/>
-  <img src="https://img.shields.io/badge/Status-Code%20Cleaning%20in%20Progress-yellow"/>
+  <img src="https://img.shields.io/badge/Python-3.10-blue"/>
+  <img src="https://img.shields.io/badge/Status-Experiments%20Complete-green"/>
 </p>
 
 ---
@@ -24,7 +24,7 @@
 
 ### Abstract
 
-Multimodal large language models (MLLMs) generate natural language explanations alongside ECG diagnostic outputs — but do these explanations faithfully reflect the visual regions the model actually attended to? We introduce the **Explanation-Attribution Faithfulness Auditor (EFA)**, a training-free, fully reproducible framework that quantifies semantic alignment between model-generated explanations and visual attribution maps, grounded in lead-level annotations derived deterministically from PTB-XL SCP codes. Applied to Gemini 2.5 Flash, LLaVA-Med, and LLaVA-v1.6-Mistral across 1,000 PTB-XL recordings, EFA reveals a systematic faithfulness gap and an inverse confidence–faithfulness relationship. Between 22% and 31% of cases fall into the **Danger Zone** — high linguistic confidence paired with low faithfulness — representing the most clinically hazardous failure mode.
+Multimodal large language models (MLLMs) generate natural language explanations alongside ECG diagnostic outputs — but do these explanations faithfully reflect the visual regions the model actually attended to? We introduce the **Explanation-Attribution Faithfulness Auditor (EFA)**, a training-free, fully reproducible framework that quantifies semantic alignment between model-generated explanations and visual attribution maps, grounded in lead-level annotations derived deterministically from PTB-XL SCP codes. EFA employs a unified lead-structured occlusion attribution pipeline applicable to both open-weights models and closed-source APIs. Applied to Gemini 2.5 Flash and LLaVA-v1.6-Mistral across 1,000 PTB-XL recordings, EFA reveals a consistent faithfulness gap. Between 14.6% and 20.8% of cases fall into the **Danger Zone** — high linguistic confidence paired with low faithfulness — representing the most clinically hazardous failure mode.
 
 ---
 
@@ -33,50 +33,10 @@ Multimodal large language models (MLLMs) generate natural language explanations 
 | Concept | Description |
 |---|---|
 | **EFA Score** | Composite metric (α·F_vis + (1−α)·F_txt) measuring alignment between visual attribution and textual lead references |
-| **F_vis** | Visual faithfulness: IoU between Grad-CAM/occlusion heatmap and ground-truth lead mask |
+| **F_vis** | Visual faithfulness: IoU between lead-structured occlusion map and ground-truth lead mask |
 | **F_txt** | Textual faithfulness: precision/recall of lead references extracted via rule-based NER |
 | **Danger Zone** | High linguistic confidence (C > τ_c) + Low EFA score (F < τ_f) — the most clinically hazardous failure mode |
 | **Ground Truth** | Lead-level annotations derived deterministically from PTB-XL SCP codes — no manual annotation required |
-
----
-
-## 🏗️ Framework Overview
-
-```
-PTB-XL Recording
-      │
-      ▼
-┌─────────────────────────────────────────────────────┐
-│              ECG Rendering (300 DPI, 2480×1754px)   │
-└───────────────────┬─────────────────────────────────┘
-                    │
-        ┌───────────┴───────────┐
-        ▼                       ▼
-  Channel A                Channel B
-  (Open-weights)           (Closed-source)
-  LLaVA-Med / Mistral      Gemini 2.5 Flash
-  GradCAM @ FP16           Lead-panel Occlusion
-        │                       │
-        └───────────┬───────────┘
-                    ▼
-        ┌───────────────────────┐
-        │   SpaCy Rule-Based    │
-        │   NER (Lead Parser)   │
-        │   P=0.96  R=0.92      │
-        └───────────┬───────────┘
-                    ▼
-        ┌───────────────────────┐
-        │      EFA Score        │
-        │  F = α·F_vis +        │
-        │      (1−α)·F_txt      │
-        └───────────┬───────────┘
-                    ▼
-        ┌───────────────────────┐
-        │  Confidence–Faith.    │
-        │  Analysis +           │
-        │  Danger Zone Map      │
-        └───────────────────────┘
-```
 
 ---
 
@@ -85,50 +45,38 @@ PTB-XL Recording
 ```
 efa-ecg/
 ├── README.md
-├── LICENSE
 ├── requirements.txt
 │
+├── step1a_sampling.py          # Stratified sampling from PTB-XL (1,000 ECGs)
+├── step1b_groundtruth.py       # SCP code → lead-level ground truth
+├── step1c_rendering.py         # ECG rendering (300 DPI, 4×3 layout)
+├── step2a_gemini_inference.py  # Gemini 2.5 Flash inference (parallel)
+├── step3a_occlusion.py         # Lead-structured occlusion attribution
+├── step4_efa.py                # EFA score computation
+├── step5_analysis.py           # Correlation & Danger Zone analysis
+│
 ├── data/
-│   ├── README.md                  # PTB-XL download instructions
-│   └── scp_to_leads.json          # SCP code → lead set mapping
+│   ├── sample_1000.csv         # 1,000 stratified ECG IDs
+│   ├── ground_truth.csv        # Lead-level ground truth
+│   ├── ground_truth.json
+│   ├── panel_coords.json       # Lead panel pixel coordinates
+│   ├── images/                 # Rendered ECG PNGs (300 DPI)
+│   └── ptb-xl/                 # PTB-XL raw data (download separately)
 │
-├── rendering/
-│   ├── render_ecg.py              # 1D signal → 2D image (300 DPI)
-│   └── layout_config.py           # 4×3 standard layout parameters
+├── kaggle_upload/              # Files uploaded to Kaggle for GPU inference
+│   ├── ecg_images.zip
+│   ├── ground_truth.csv
+│   ├── ground_truth.json
+│   └── sample_1000.csv
 │
-├── attribution/
-│   ├── gradcam_llava.py           # Grad-CAM for LLaVA models (FP16)
-│   └── occlusion_gemini.py        # Lead-panel occlusion for Gemini API
-│
-├── ner/
-│   ├── lead_ner.py                # SpaCy rule-based lead extractor
-│   └── patterns/
-│       ├── lead_patterns.jsonl    # 36 lead name patterns
-│       ├── wave_patterns.jsonl    # 28 wave reference patterns
-│       └── modifier_patterns.jsonl # 26 directional modifier patterns
-│
-├── efa/
-│   ├── efa_score.py               # Core EFA metric computation
-│   ├── confidence.py              # Linguistic confidence (logprob)
-│   └── danger_zone.py             # Danger Zone classification
-│
-├── evaluation/
-│   ├── benchmark.py               # Full benchmark pipeline
-│   └── ablation.py                # Grad-CAM vs Occlusion ablation
-│
-├── figures/
-│   ├── fig1_teaser.py
-│   ├── fig2_framework.py
-│   ├── fig3_heatmap.py
-│   ├── fig4_scatter.py
-│   ├── fig5_danger.py
-│   └── fig6_qualitative.py
-│
-├── prompts/
-│   └── ecg_interpretation_prompt.txt   # Standardized prompt template
-│
-└── notebooks/
-    └── demo.ipynb                 # End-to-end demo on sample ECGs
+└── results/
+    ├── gemini_outputs.csv          # Gemini 2.5 Flash responses (1,000)
+    ├── llava_mistral_outputs.csv   # LLaVA-v1.6-Mistral responses (1,000)
+    ├── llava_mistral_occlusion.csv # Occlusion attribution scores
+    ├── efa_scores.csv              # Final EFA scores (all models)
+    ├── correlation_results.csv     # Confidence–faithfulness correlation
+    ├── danger_zone_results.csv     # Danger Zone prevalence
+    └── occ_maps/                   # Per-ECG occlusion numpy arrays
 ```
 
 ---
@@ -142,58 +90,40 @@ pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 ```
 
-**requirements.txt** (key dependencies):
-```
-torch>=2.0.0
-transformers>=4.40.0
-wfdb>=4.1.0
-matplotlib>=3.7.0
-numpy>=1.24.0
-spacy>=3.7.0
-opencv-python>=4.8.0
-scipy>=1.11.0
-google-generativeai>=0.5.0
-pandas>=2.0.0
-scikit-learn>=1.3.0
-```
-
 ---
 
 ## 📊 Dataset
 
-This project uses **PTB-XL** (Wagner et al., 2020), available from PhysioNet:
+Download **PTB-XL** from PhysioNet and place under `data/ptb-xl/`:
 
 ```bash
 wget -r -N -c -np https://physionet.org/files/ptb-xl/1.0.3/
 ```
 
-Place the downloaded data under `data/ptb-xl/`. See `data/README.md` for the exact expected directory structure.
-
-**Stratified sample used in this paper:** 1,000 recordings (200 per superclass: NORM, MI, STTC, CD, HYP).
-
 ---
 
-## 🚀 Quick Start
+## 🚀 Reproducing the Experiments
 
-```python
-from efa.efa_score import EFAuditor
+```bash
+# Step 1: Data preparation
+python step1a_sampling.py
+python step1b_groundtruth.py
+python step1c_rendering.py
 
-# Initialize auditor
-auditor = EFAuditor(alpha=0.5, tau_c=0.75, tau_f=0.25)
+# Step 2: Model inference
+python step2a_gemini_inference.py   # Requires GEMINI_API_KEY
 
-# Compute EFA for a single recording
-result = auditor.evaluate(
-    ecg_image_path="sample.png",
-    model_explanation="ST elevation is clearly visible in leads II, III, and aVF...",
-    attribution_map=heatmap,          # numpy array, same shape as ECG image
-    ground_truth_leads=["II", "III", "aVF"]
-)
+# Step 3: Occlusion attribution (GPU recommended — run on Kaggle/Colab)
+python step3a_occlusion.py
 
-print(f"F_vis: {result.f_vis:.3f}")
-print(f"F_txt: {result.f_txt:.3f}")
-print(f"EFA:   {result.efa:.3f}")
-print(f"Danger Zone: {result.danger_zone}")
+# Step 4: EFA computation
+python step4_efa.py
+
+# Step 5: Analysis
+python step5_analysis.py
 ```
+
+> **Note:** Step 3 requires a GPU with at least 16 GB VRAM (FP16). It can be run on any GPU-enabled environment — local, cloud, or free-tier platforms such as Kaggle or Google Colab.
 
 ---
 
@@ -203,25 +133,28 @@ print(f"Danger Zone: {result.danger_zone}")
 
 | Model | NORM | MI | STTC | CD | HYP | Macro |
 |---|---|---|---|---|---|---|
-| Gemini 2.5 Flash | 0.29 | 0.47 | 0.33 | 0.21 | 0.28 | 0.32 |
-| LLaVA-Med-7B | 0.31 | 0.51 | 0.36 | 0.25 | 0.31 | 0.35 |
-| LLaVA-v1.6-Mistral | 0.22 | 0.38 | 0.26 | 0.17 | 0.21 | 0.25 |
+| Gemini 2.5 Flash | 0.007 | 0.320 | 0.344 | 0.269 | 0.331 | **0.254** |
+| LLaVA-v1.6-Mistral | 0.003 | 0.181 | 0.192 | 0.106 | 0.202 | 0.137 |
 
-> ⚠️ These are **placeholder values** from the paper draft. Final experimental results will be updated upon completion.
+### Confidence–Faithfulness Correlation
+
+| Model | Pearson r | p-value | Interpretation |
+|---|---|---|---|
+| Gemini 2.5 Flash | 0.045 | 0.156 | No significant correlation |
+| LLaVA-v1.6-Mistral | −0.062 | 0.049 | Weak negative correlation |
 
 ### Danger Zone Prevalence
 
 | Model | NORM | MI | STTC | CD | HYP | Overall |
 |---|---|---|---|---|---|---|
-| Gemini 2.5 Flash | 21% | 15% | 24% | 38% | 33% | 26.2% |
-| LLaVA-Med-7B | 17% | 12% | 21% | 31% | 29% | 22.4% |
-| LLaVA-v1.6-Mistral | 28% | 21% | 30% | 42% | 38% | 31.2% |
+| Gemini 2.5 Flash | 75.5% | 0.0% | 5.5% | 19.5% | 3.5% | **20.8%** |
+| LLaVA-v1.6-Mistral | 53.0% | 6.0% | 0.5% | 13.5% | 0.0% | 14.6% |
+
+> High NORM Danger Zone rates reflect that models express high confidence on normal ECGs while generating lead-specific explanations that cannot be grounded against any pathology-specific lead set.
 
 ---
 
 ## 📝 Citation
-
-If you use EFA-ECG in your research, please cite:
 
 ```bibtex
 @article{atas2025efa,
@@ -239,14 +172,15 @@ If you use EFA-ECG in your research, please cite:
 ## 🗺️ Roadmap
 
 - [x] ECG rendering pipeline (1D → 2D, 300 DPI)
+- [x] Stratified sampling (1,000 recordings, 5 superclasses)
+- [x] SCP → lead-level ground truth construction
+- [x] Gemini 2.5 Flash inference (1,000 ECGs)
+- [x] LLaVA-v1.6-Mistral inference (1,000 ECGs)
+- [x] Unified lead-structured occlusion attribution
 - [x] SpaCy NER lead extractor (P=0.96, R=0.92)
-- [x] EFA metric implementation
+- [x] EFA metric (additive + multiplicative + harmonic variants)
 - [x] Danger Zone classifier
-- [ ] Full benchmark pipeline (cleaning in progress)
-- [ ] LLaVA-Med Grad-CAM inference scripts
-- [ ] Gemini 2.5 Flash occlusion scripts
-- [ ] demo.ipynb end-to-end notebook
-- [ ] MIMIC-IV-ECG external validation
+- [x] Confidence–faithfulness correlation analysis
 
 ---
 
@@ -259,9 +193,8 @@ MIT License — see [LICENSE](LICENSE) for details.
 ## 🙏 Acknowledgements
 
 - PTB-XL dataset: Wagner et al., PhysioNet 2020
-- LLaVA-Med: Microsoft Research
 - Gemini API: Google DeepMind
-- Grad-CAM: Selvaraju et al., ICCV 2017
+- LLaVA: Haotian Liu et al.
 
 ---
 
