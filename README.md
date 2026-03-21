@@ -157,4 +157,14 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
+## 👤 Author
+
+**Prof. Dr. Musa Ataş**
+Department of Computer Engineering, Siirt University, Turkey
+
+📧 [musa.atas@siirt.edu.tr](mailto:musa.atas@siirt.edu.tr) · [hakmesyo@gmail.com](mailto:hakmesyo@gmail.com)
+🔗 [github.com/hakmesyo](https://github.com/hakmesyo)
+
+---
+
 *Cezeri Artificial Intelligence Laboratory — Siirt University, Turkey*
