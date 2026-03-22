@@ -97,15 +97,14 @@ Multimodal large language models (MLLMs) generate natural language explanations 
 efa-ecg/
 ├── README.md
 ├── requirements.txt
-├── notebooks/
-│   └── efa_ecg_v2_kaggle.ipynb    ← Recommended: single notebook
+├── efa_ecg_v2_kaggle.ipynb         ← Recommended: single notebook
 ├── step1a_sampling.py              ← Reference only
-├── step1b_groundtruth.py
-├── step1c_rendering.py
-├── step2a_gemini_inference.py
-├── step3a_occlusion.py
-├── step4_efa.py
-└── step5_analysis.py
+├── step1b_groundtruth.py			← Reference only
+├── step1c_rendering.py				← Reference only
+├── step2a_gemini_inference.py		← Reference only
+├── step3a_occlusion.py				← Reference only
+├── step4_efa.py					← Reference only
+└── step5_analysis.py				← Reference only
 ```
 
 ---
