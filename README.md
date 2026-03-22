@@ -9,8 +9,8 @@
   <a href="https://www.kaggle.com/code/cezeriotonomo/efa-ecg"><img src="https://img.shields.io/badge/Kaggle-Reproduce%20in%201--Click-20BEFF?logo=kaggle"/></a>
   <a href="https://www.physionet.org/content/ptb-xl/1.0.3/"><img src="https://img.shields.io/badge/Dataset-PTB--XL-blue"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green"/></a>
-  <img src="https://img.shields.io/badge/Python-3.10-blue"/>
-  <img src="https://img.shields.io/badge/Models-5-brightgreen"/>
+  <img src="https://img.shields.io/badge/Python-3.10+-blue"/>
+  <img src="https://img.shields.io/badge/Models-6-brightgreen"/>
 </p>
 
 ---
@@ -25,7 +25,7 @@
 
 ### Abstract
 
-Multimodal large language models (MLLMs) generate natural language explanations alongside ECG diagnostic outputs — but do these explanations faithfully reflect the visual regions the model actually attended to? We introduce the **Explanation-Attribution Faithfulness Auditor (EFA)**, a training-free, fully reproducible framework that quantifies semantic alignment between model-generated explanations and visual attribution maps, grounded in lead-level annotations derived deterministically from PTB-XL SCP codes. EFA employs a unified lead-structured occlusion attribution pipeline applicable to both open-weights models and closed-source APIs. Applied to five state-of-the-art MLLMs — Gemini 2.5 Flash, Claude Sonnet 4, LLaVA-v1.6-Mistral-7B, Qwen2.5-VL-7B, and InternVL2-8B — across 250 stratified PTB-XL recordings, EFA reveals a consistent **faithfulness gap**: models frequently produce plausible-sounding explanations that are poorly grounded in their actual visual evidence. A substantial proportion of cases fall into the **Danger Zone** — high linguistic confidence paired with low faithfulness — representing the most clinically hazardous failure mode.
+Multimodal large language models (MLLMs) generate natural language explanations alongside ECG diagnostic outputs — but do these explanations faithfully reflect the visual regions the model actually attended to? We introduce the **Explanation-Attribution Faithfulness Auditor (EFA)**, a training-free, fully reproducible framework that quantifies semantic alignment between model-generated explanations and visual attribution maps, grounded in lead-level annotations derived deterministically from PTB-XL SCP codes. Applied to six state-of-the-art MLLMs — including Gemini 2.5 Flash, Claude Sonnet 4, Gemma3-4B, Qwen2.5-VL-7B, InternVL2-8B, and LLaVA-1.5-7B — across 250 stratified PTB-XL recordings, EFA reveals a consistent **faithfulness gap**. A substantial proportion of cases fall into the **Danger Zone** — high linguistic confidence paired with low faithfulness — representing the most clinically hazardous failure mode.
 
 ---
 
@@ -33,100 +33,61 @@ Multimodal large language models (MLLMs) generate natural language explanations 
 
 | Concept | Description |
 |---|---|
-| **EFA Score** | Composite metric (α·F_vis + (1−α)·F_txt) measuring alignment between visual attribution and textual lead references |
+| **EFA Score** | Composite metric measuring alignment between visual attribution and textual lead references |
 | **F_vis** | Visual faithfulness: IoU between top-k occluded leads and ground-truth lead set |
 | **F_txt** | Textual faithfulness: Jaccard IoU between NER-extracted lead references and ground-truth leads |
-| **Danger Zone** | High linguistic confidence + Low EFA score — the most clinically hazardous failure mode |
-| **Ground Truth** | Lead-level annotations derived deterministically from PTB-XL SCP codes — no manual annotation required |
+| **Danger Zone** | High confidence + Low faithfulness — no signal to the clinician that the explanation is unfaithful |
+| **Ground Truth** | Lead-level annotations derived deterministically from PTB-XL SCP codes |
 
 ---
 
-## One-Click Reproduction (Recommended)
-
-The entire experiment pipeline — data download, model inference, occlusion attribution, EFA computation, and statistical analysis — runs in a **single Kaggle notebook**.
+## One-Click Reproduction
 
 [![Open in Kaggle](https://kaggle.com/static/images/open-in-kaggle.svg)](https://www.kaggle.com/code/cezeriotonomo/efa-ecg)
 
-### Steps
+1. Open the notebook on Kaggle
+2. Add `CLAUDE_API_KEY` in **Add-ons → Secrets** (from [console.anthropic.com](https://console.anthropic.com/settings/api-keys))
+3. Select **GPU T4 x2**, ensure **Internet** is on
+4. **Run All** — pre-computed results auto-download from GitHub Release
 
-1. Click the badge above (or open the notebook on Kaggle)
-2. Go to **Add-ons → Secrets** and add your API keys:
-   - `CLAUDE_API_KEY` — from [console.anthropic.com](https://console.anthropic.com/settings/api-keys)
-   - `GEMINI_API_KEY` — from [aistudio.google.com](https://aistudio.google.com/apikey) *(optional: pre-computed results are included)*
-3. Select **GPU T4** or **GPU P100** as accelerator
-4. Ensure **Internet** is enabled
-5. **Run All** — results will match the paper
-
-> **Note:** Pre-computed Gemini 2.5 Flash results are automatically downloaded from this repository's GitHub Release. Re-running Gemini inference is optional and requires a valid API key. Claude Sonnet 4 inference requires a valid API key with credits (~$3-4 for 250 recordings). Local models (LLaVA, Qwen, InternVL) run on Kaggle GPU at no cost.
+> Claude inference costs ~$3.50 for 250 recordings. All other models run free on Kaggle GPU or use pre-computed results.
 
 ---
 
 ## Evaluated Models
 
-| Model | Type | Access | Quantization |
+| Model | Type | Provider | Access |
 |---|---|---|---|
-| **Gemini 2.5 Flash** | Closed-source | Google API | — |
-| **Claude Sonnet 4** | Closed-source | Anthropic API | — |
-| **LLaVA-v1.6-Mistral-7B** | Open-weights | Local (Kaggle GPU) | INT4 (bitsandbytes) |
-| **Qwen2.5-VL-7B** | Open-weights | Local (Kaggle GPU) | INT4 (bitsandbytes) |
-| **InternVL2-8B** | Open-weights | Local (Kaggle GPU) | INT4 (bitsandbytes) |
-
-Open-weights models are evaluated at INT4 precision, reflecting realistic clinical deployment conditions where high-end GPU infrastructure is not universally available.
+| **Gemini 2.5 Flash** | Closed-source | Google | API |
+| **Claude Sonnet 4** | Closed-source | Anthropic | API |
+| **Gemma3-4B** | Open-weights | Google | Kaggle GPU (INT4) |
+| **Qwen2.5-VL-7B** | Open-weights | Alibaba | Kaggle GPU (INT4) |
+| **InternVL2-8B** | Open-weights | Shanghai AI Lab | Kaggle GPU (INT4) |
+| **LLaVA-1.5-7B** | Open-weights | UW–Madison | Kaggle GPU (INT4) |
 
 ---
 
-## Methodology Improvements (v2)
-
-This version addresses reviewer feedback with the following changes:
+## Methodology v2 Improvements
 
 | Aspect | v1 | v2 |
 |---|---|---|
-| Models evaluated | 2 | **5** |
-| F_txt metric | Recall only | **Jaccard IoU** (primary), F1 and Recall (secondary) |
-| Occlusion fill | Gray (128) | **White (255)** + gray vs white ablation study |
-| Per-model occlusion | Shared across models | **Independent per model** |
-| NORM edge case | Undefined (division by zero) | **Explicitly handled** |
-| α sensitivity | Claimed but not shown | **Reported for α ∈ {0.3, 0.5, 0.7}** |
-| MI subclass analysis | Not reported | **Inferior / Anterior / Lateral breakdown** |
-| EFA variants | Additive only | **Additive + Multiplicative + Harmonic** |
+| Models | 2 | **6** |
+| F_txt | Recall | **Jaccard IoU** |
+| Occlusion fill | Gray (128) | **White (255)** + ablation |
+| Per-model occlusion | Shared | **Independent** |
+| NORM edge case | Undefined | **Handled** |
+| α sensitivity | Not shown | **{0.3, 0.5, 0.7}** |
+| MI subclass | Not reported | **Inferior/Anterior/Lateral** |
+| EFA variants | Additive | **Additive + Multiplicative + Harmonic** |
+| Image size | Variable | **800×600 standardized** |
 
 ---
 
-## Dataset
+## GitHub Release
 
-All experiments use **PTB-XL**, the largest publicly available clinical 12-lead ECG dataset (21,799 recordings). A stratified subset of 250 recordings (50 per diagnostic superclass) is used for the main evaluation. Pre-rendered ECG images (300 DPI, 4×3 layout) are available in the GitHub Release.
+[All data and results](https://github.com/hakmesyo/efa-ecg/releases/tag/ecg_images) are auto-downloaded by the notebook:
 
-### GitHub Release Contents
-
-All data files are hosted as [GitHub Release assets](https://github.com/hakmesyo/efa-ecg/releases/tag/ecg_images):
-
-| File | Description |
-|---|---|
-| `ecg_images.zip` | 1,000 pre-rendered 12-lead ECG images (PNG, 300 DPI) |
-| `sample_1000.csv` | Stratified sample metadata with SCP codes |
-| `ground_truth.csv` | Lead-level ground truth derived from SCP codes |
-| `panel_coords.json` | Pixel coordinates for each lead panel |
-| `gemini_outputs.csv` | Pre-computed Gemini 2.5 Flash inference results |
-
-The Kaggle notebook automatically downloads these files at runtime.
-
----
-
-## Main Results
-
-> **Note:** Results below are from v2 experiments (5 models, 250 recordings). Tables will be updated upon completion of all experiments.
-
-### EFA Scores by Model and Diagnostic Superclass
-
-| Model | NORM | MI | STTC | CD | HYP | Macro |
-|---|---|---|---|---|---|---|
-| Gemini 2.5 Flash | — | — | — | — | — | — |
-| Claude Sonnet 4 | — | — | — | — | — | — |
-| LLaVA-v1.6-Mistral-7B | — | — | — | — | — | — |
-| Qwen2.5-VL-7B | — | — | — | — | — | — |
-| InternVL2-8B | — | — | — | — | — | — |
-
-*Results will be populated after completing all model evaluations.*
+`ecg_images.zip` · `sample_1000.csv` · `ground_truth.csv` · `panel_coords.json` · `gemini_outputs.csv` · `claude_outputs.csv` · `llava_outputs.csv` · `qwen_outputs.csv` · `internvl_outputs.csv` · `gemma3_outputs.csv`
 
 ---
 
@@ -134,20 +95,18 @@ The Kaggle notebook automatically downloads these files at runtime.
 
 ```
 efa-ecg/
-├── README.md                      ← This file
-├── requirements.txt               ← Dependencies for local execution
+├── README.md
+├── requirements.txt
 ├── notebooks/
-│   └── efa_ecg_v2_kaggle.ipynb    ← Main experiment notebook (recommended)
-├── step1a_sampling.py             ← Reference: stratified sampling
-├── step1b_groundtruth.py          ← Reference: SCP → lead mapping
-├── step1c_rendering.py            ← Reference: 1D signal → 2D image
-├── step2a_gemini_inference.py     ← Reference: Gemini API inference
-├── step3a_occlusion.py            ← Reference: occlusion attribution
-├── step4_efa.py                   ← Reference: EFA computation
-└── step5_analysis.py              ← Reference: statistical analysis
+│   └── efa_ecg_v2_kaggle.ipynb    ← Recommended: single notebook
+├── step1a_sampling.py              ← Reference only
+├── step1b_groundtruth.py
+├── step1c_rendering.py
+├── step2a_gemini_inference.py
+├── step3a_occlusion.py
+├── step4_efa.py
+└── step5_analysis.py
 ```
-
-> The individual Python scripts are provided for reference only. The recommended way to reproduce all results is the **Kaggle notebook**.
 
 ---
 
@@ -155,41 +114,19 @@ efa-ecg/
 
 ```bibtex
 @article{atas2025efa,
-  title     = {Do Multimodal {LLMs} Really See What They Say?
-               A Faithfulness Audit for {ECG} Interpretation},
-  author    = {Ata\c{s}, Musa},
-  journal   = {{IEEE} Journal of Biomedical and Health Informatics},
-  year      = {2025},
-  note      = {Under review}
+  title   = {Do Multimodal {LLMs} Really See What They Say?
+             A Faithfulness Audit for {ECG} Interpretation},
+  author  = {Ata\c{s}, Musa},
+  journal = {{IEEE} Journal of Biomedical and Health Informatics},
+  year    = {2025},
+  note    = {Under review}
 }
 ```
 
 ---
 
-## License
-
-MIT License — see [LICENSE](LICENSE) for details.
-
----
-
-## Acknowledgements
-
-- PTB-XL dataset: Wagner et al., PhysioNet 2020
-- Gemini API: Google DeepMind
-- Claude API: Anthropic
-- LLaVA: Haotian Liu et al.
-- Qwen2.5-VL: Alibaba DAMO Academy
-- InternVL2: OpenGVLab, Shanghai AI Laboratory
-
----
-
 ## Author
 
-**Prof. Dr. Musa Ataş**
-Department of Computer Engineering, Siirt University, Turkey
+**Prof. Dr. Musa Ataş** · Siirt University, Turkey · [musa.atas@siirt.edu.tr](mailto:musa.atas@siirt.edu.tr) · [github.com/hakmesyo](https://github.com/hakmesyo)
 
-[musa.atas@siirt.edu.tr](mailto:musa.atas@siirt.edu.tr) · [hakmesyo@gmail.com](mailto:hakmesyo@gmail.com) · [github.com/hakmesyo](https://github.com/hakmesyo)
-
----
-
-*Cezeri Artificial Intelligence Laboratory — Siirt University, Turkey*
+*Cezeri Artificial Intelligence Laboratory*
